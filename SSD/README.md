@@ -1,0 +1,1 @@
+This project is based on the tutorial in https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection
