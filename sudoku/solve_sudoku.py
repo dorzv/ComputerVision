@@ -13,6 +13,14 @@ model.eval()
 
 
 def get_number(im):
+    """
+    predict digit from image
+    Args:
+        im (np.ndarray): image of digit
+
+    Returns:
+        int: the digit that was predicted
+    """
     im = torch.tensor(im / 255).float().to(device)
     im = im.view(-1, 1, 28, 28)
     prediction = model(im)
@@ -21,6 +29,14 @@ def get_number(im):
 
 
 def imshow(im):
+    """
+    Show image. Can show gray-scale image or RGB
+    Args:
+        im (np.ndarray): image to be shown. Can be of 2-D (gray-scale) or 3-D (RGB)
+
+    Returns:
+
+    """
     plt.figure()
     if im.ndim == 2:
         plt.imshow(im, cmap='gray', vmin=0, vmax=255)
