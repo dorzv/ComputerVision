@@ -30,7 +30,7 @@ def iou(box1, box2):
     return iou_val
 
 
-def non_maximum_supression(boxs: list):
+def non_maximum_suppression(boxs: list):
     boxs = sorted(boxs, key=lambda x: (x[2] - x[0]) * (x[3] - x[1]))
     max_boxs = []
     while boxs:
@@ -69,7 +69,7 @@ def find_sunspot(image):
         _, radius = cv2.minEnclosingCircle(cnt)
         boxs.append((x - oversize, y - oversize, x + w + oversize, y + h + oversize, radius))
 
-    boxs = non_maximum_supression(boxs)
+    boxs = non_maximum_suppression(boxs)
 
     for x1, y1, x2, y2, r in boxs:
         cv2.rectangle(im_rgb, (x1, y1), (x2, y2), (255, 0, 0), 1)
