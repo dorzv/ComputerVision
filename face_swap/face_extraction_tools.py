@@ -1,7 +1,7 @@
 import cv2
 from pathlib import Path
 
-def extract_frames_from_video(video_path: str, output_folder: str, frames_to_skip: int):
+def extract_frames_from_video(video_path: str, output_folder: str, frames_to_skip: int=0):
     """
     Extract frame from video as a JPG images.
     Args:
