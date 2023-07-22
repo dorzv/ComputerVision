@@ -62,24 +62,12 @@ def extract_and_align_face_from_image(input_dir: str, desired_face_width: int=25
         rmtree(output_dir)
     output_dir.mkdir()
 
-    desired_face_height = desired_face_width
 
     image = cv2.imread(str(input_dir / '00000.jpg'))
     image_height = image.shape[0]
     image_width = image.shape[1]
 
-    detection_model_path = Path('models/face_detection_yunet_2022mar.onnx')
-    if not detection_model_path.exists():
-        detection_model_path.parent.mkdir(parents=True, exist_ok=True)
-        url = "https://github.com/opencv/opencv_zoo/raw/master/models/face_detection_yunet/face_detection_yunet_2022mar.onnx"
-        print('Downloading face detection model...')
-        filename, headers = urlretrieve(url, filename=str(detection_model_path))
-        print('Download finish!')
-
-    detector = cv2.FaceDetectorYN.create(str(detection_model_path), "", (image_width, image_height))
-
-    left_eye_desired_coordinate = np.array((0.37, 0.37))
-    right_eye_desired_coordinate = np.array((1 - left_eye_desired_coordinate[0], left_eye_desired_coordinate[1]))
+    detector = FaceExtractor((image_width, image_height))
 
     for image_path in tqdm(list(input_dir.glob('*.jpg'))):
         image = cv2.imread(str(image_path))
@@ -88,10 +76,70 @@ def extract_and_align_face_from_image(input_dir: str, desired_face_width: int=25
         if faces is None:
             continue
 
-        # align the face
+        face_aligned = detector.align(image, faces[0, :], desired_face_width)
+        cv2.imwrite(str(output_dir / f'{image_path.name}'), face_aligned, [cv2.IMWRITE_JPEG_QUALITY, 90])
+
+
+class FaceExtractor:
+    """A class to extract face from image using YuNet, and align it"""
+    def __init__(self, image_size):
+        """
+        Create a YuNet face detector to get face from image of size 'image_size'. The YuNet model
+        will be downloaded from opencv zoo, if it's not already exist.
+        Args:
+            image_size (tuple): a tuple of (width: int, height: int) of the image to be analyzed
+        """
+        detection_model_path = Path('models/face_detection_yunet_2023mar.onnx')
+        if not detection_model_path.exists():
+            detection_model_path.parent.mkdir(parents=True, exist_ok=True)
+            url = "https://github.com/opencv/opencv_zoo/blob/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx"
+            print('Downloading face detection model...')
+            filename, headers = urlretrieve(url, filename=str(detection_model_path))
+            print('Download finish!')
+
+        self.detector = cv2.FaceDetectorYN.create(str(detection_model_path), "", image_size)
+
+    def detect(self, image):
+        """
+        Run the face detector
+        Args:
+            image (np.ndarry): an image with a face
+
+        Returns:
+            (int): return valvue indicate if the operation succeeded
+            (np.ndarray): detection results of shape [num_faces, 15] (here num_faces=1)
+                0-1: x, y of bbox top left corner
+                2-3: width, height of bbox
+                4-5: x, y of right eye
+                6-7: x, y of left eye
+                8-9: x, y of nose tip
+                10-11: x, y of right corner of mouth
+                12-13: x, y of left corner of mouth
+                14: face score
+        """
+        ret, faces = self.detector.detect(image)
+        return ret, faces
+
+    @staticmethod
+    def align(image, face, desired_face_width=256, left_eye_desired_coordinate=np.array((0.37, 0.37))):
+        """
+        Align the face so the eyes will be at the same level
+        Args:
+            image (np.ndarray): image with face
+            face (np.ndarray):  face coordinates from the detection step
+            desired_face_width (int): the final width of the aligned face image
+            left_eye_desired_coordinate (np.ndarray): a length 2 array of values between
+             0 and 1 where the left eye should be in the aligned image
+
+        Returns:
+            (np.ndarray): aligned face image
+        """
+        desired_face_height = desired_face_width
+        right_eye_desired_coordinate = np.array((1 - left_eye_desired_coordinate[0], left_eye_desired_coordinate[1]))
+
         # get coordinate of the center of the eyes in the image
-        right_eye = faces[0, 4:6]
-        left_eye = faces[0, 6:8]
+        right_eye = face[4:6]
+        left_eye = face[6:8]
 
         # compute the angle of the right eye relative to the left eye
         dist_eyes_x = right_eye[0] - left_eye[0]
@@ -100,7 +148,8 @@ def extract_and_align_face_from_image(input_dir: str, desired_face_width: int=25
         angles_between_eyes = np.rad2deg(np.arctan2(dist_eyes_y, dist_eyes_x) - np.pi)
         eyes_center = (left_eye + right_eye) // 2
 
-        desired_dist_between_eyes = desired_face_width * (right_eye_desired_coordinate[0] - left_eye_desired_coordinate[0])
+        desired_dist_between_eyes = desired_face_width * (
+                    right_eye_desired_coordinate[0] - left_eye_desired_coordinate[0])
         scale = desired_dist_between_eyes / dist_between_eyes
 
         M = cv2.getRotationMatrix2D(eyes_center, angles_between_eyes, scale)
@@ -109,6 +158,4 @@ def extract_and_align_face_from_image(input_dir: str, desired_face_width: int=25
         M[1, 2] += left_eye_desired_coordinate[1] * desired_face_height - eyes_center[1]
 
         face_aligned = cv2.warpAffine(image, M, (desired_face_width, desired_face_height), flags=cv2.INTER_CUBIC)
-
-        cv2.imwrite(str(output_dir / f'{image_path.name}'), face_aligned, [cv2.IMWRITE_JPEG_QUALITY, 90])
-
+        return face_aligned
