@@ -159,3 +159,32 @@ class FaceExtractor:
 
         face_aligned = cv2.warpAffine(image, M, (desired_face_width, desired_face_height), flags=cv2.INTER_CUBIC)
         return face_aligned
+
+    @staticmethod
+    def extract(image, face, desired_face_width=256, left_eye_desired_coordinate=np.array((0.37, 0.37))):
+        """
+        Align the face so the eyes will be at the same level
+        Args:
+            image (np.ndarray): image with face
+            face (np.ndarray):  face coordinates from the detection step
+            desired_face_width (int): the final width of the aligned face image
+            left_eye_desired_coordinate (np.ndarray): a length 2 array of values between
+             0 and 1 where the left eye should be in the aligned image
+
+        Returns:
+            (np.ndarray): aligned face image
+        """
+        desired_face_height = desired_face_width
+
+        # get coordinate of the center of the eyes in the image
+        right_eye = face[4:6]
+        left_eye = face[6:8]
+
+        eyes_center = (left_eye + right_eye) // 2
+
+        x_left = (eyes_center[0] - desired_face_width//2).astype(int)
+        width = desired_face_width
+        y_top = (eyes_center[1] - left_eye_desired_coordinate[1] * desired_face_height).astype(int)
+        height = desired_face_height
+        face = image[y_top:y_top+height, x_left:x_left+width]
+        return face, [x_left, y_top, width, height]
