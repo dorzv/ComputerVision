@@ -4,8 +4,9 @@ from shutil import rmtree
 from urllib.request import urlretrieve
 import numpy as np
 from tqdm import tqdm
+from typing import Union
 
-def extract_frames_from_video(video_path: str, output_folder: str, frames_to_skip: int=0) -> None:
+def extract_frames_from_video(video_path: Union[str, Path], output_folder: Union[str, Path], frames_to_skip: int=0) -> None:
     """
     Extract frame from video as a JPG images.
     Args:
@@ -45,7 +46,7 @@ def extract_frames_from_video(video_path: str, output_folder: str, frames_to_ski
     print(f'{saved_frame_counter} of {extract_frame_counter} frames saved')
 
 
-def extract_and_align_face_from_image(input_dir: str, desired_face_width: int=256) -> None:
+def extract_and_align_face_from_image(input_dir: Union[str, Path], desired_face_width: int=256) -> None:
     """
     Extract the face from an image, align it and save to a directory inside in the input directory
     Args:
