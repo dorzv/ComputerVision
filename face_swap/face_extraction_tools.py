@@ -103,7 +103,7 @@ class FaceExtractor:
         """
         Run the face detector
         Args:
-            image (np.ndarry): an image with a face
+            image (np.ndarray): an image with a face
 
         Returns:
             (int): return valvue indicate if the operation succeeded
