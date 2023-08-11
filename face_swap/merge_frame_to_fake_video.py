@@ -14,7 +14,7 @@ def merge_frames_to_fake_video(dst_frames_path, model_name='Quick96', saved_mode
     dst_frames_path = Path(dst_frames_path)
     image = Image.open(next(dst_frames_path.glob('*.jpg')))
     image_size = image.size
-    result_video = cv2.VideoWriter(str(dst_frames_path.parent / 'fake.avi'), cv2.VideoWriter_fourcc(*'MJPG'), 30, image.size)
+    result_video = cv2.VideoWriter(str(dst_frames_path.parent / 'fake.mp4'), cv2.VideoWriter_fourcc(*'MJPG'), 30, image.size)
 
     face_extractor = FaceExtractor(image_size)
     face_masker = FaceMasking()
