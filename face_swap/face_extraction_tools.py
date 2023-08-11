@@ -10,8 +10,8 @@ def extract_frames_from_video(video_path: Union[str, Path], output_folder: Union
     """
     Extract frame from video as a JPG images.
     Args:
-        video_path (str): the path to the input video from it the frame will be extracted
-        output_folder (str): the folder where the frames will be saved
+        video_path (str|Path): the path to the input video from it the frame will be extracted
+        output_folder (str|Path): the folder where the frames will be saved
         frames_to_skip (int): how many frames to skip after a frame which is saved. 0 will save all the frames.
             If, for example, this value is 2, the first frame will be saved, then frame 2 and 3 will be skipped,
             the 4th frame will be saved, and so on.
@@ -44,13 +44,14 @@ def extract_frames_from_video(video_path: Union[str, Path], output_folder: Union
         extract_frame_counter += 1
 
     print(f'{saved_frame_counter} of {extract_frame_counter} frames saved')
+    video_capture.release()
 
 
 def extract_and_align_face_from_image(input_dir: Union[str, Path], desired_face_width: int=256) -> None:
     """
     Extract the face from an image, align it and save to a directory inside in the input directory
     Args:
-        input_dir (str): path to the directory contains the images extracted from a video
+        input_dir (str|Path): path to the directory contains the images extracted from a video
         desired_face_width (int): the width of the aligned imaged in pixels
 
     Returns:
