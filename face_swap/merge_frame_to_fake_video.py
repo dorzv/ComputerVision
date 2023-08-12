@@ -57,8 +57,7 @@ def merge_frames_to_fake_video(dst_frames_path, model_name='Quick96', saved_mode
         except:
             print('Skip')
             continue
-        # face_image_resized[96//2:96+96//2, 96//2:96+96//2] = output_face
-        # fake_face_image = cv2.resize(face_image_resized, (face_image.shape[1], face_image[0]))
+
         fake_face_image = cv2.resize(output_face, (face_image.shape[1], face_image.shape[0]))
         fake_face_image = fake_face_image[..., ::-1] # change to BGR
         frame[face[1]:face[1]+face[3], face[0]:face[0]+face[2]] = fake_face_image
