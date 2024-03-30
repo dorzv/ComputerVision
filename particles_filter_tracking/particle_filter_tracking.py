@@ -69,7 +69,7 @@ def predict_particles(particles_states):
     predicted_states = dynamics @ particles_states + np.random.normal(loc=0, scale=1, size=particles_states.shape)
     return predicted_states
 
-def sample_particle(particles_states, sampling_weights):
+def sample_particle(particles_states, weights):
     """
     Sample the particles (states) according to their weights.
     First a random numbers from uniform distribution U~[0,1] are generated.
@@ -81,11 +81,13 @@ def sample_particle(particles_states, sampling_weights):
     the smaller one that hold this inequality.
     Args:
         particles_states (np.ndarray): matrix which its columns are the states
-        sampling_weights (np.ndarray): a cumulative sum of the weights of each state
+        weights (np.ndarray): weights of each state
 
     Returns:
         (np.ndarray): matrix of sampled states according to their weights
     """
+    normalized_weights = weights / np.sum(weights)
+    sampling_weights = np.cumsum(normalized_weights)
     rand_numbers = np.random.random(sampling_weights.size)  # get random numbers from U~[0,1]
     cross_diff = sampling_weights[None, :] - rand_numbers[:, None]  # subtract from each weight any of the random numbers
     cross_diff[cross_diff < 0] = np.inf  # remove negative results
@@ -139,7 +141,7 @@ def draw_particles(image, states, weights):
 cap = cv2.VideoCapture('simpson.avi')
 ret, image = cap.read()
 
-num_of_particles = 120
+num_of_particles = 250
 # s_init = np.array([375, 198, 0, 0])  # initial state [x_center, y_center, x_velocity, y_velocity]
 s_init = np.array([81, 169, 0, 0])  # initial state [x_center, y_center, x_velocity, y_velocity]
 
@@ -159,27 +161,18 @@ result = cv2.VideoWriter('simpson_tracked.avi',
                          cv2.VideoWriter_fourcc(*'MJPG'),
                          fps, size)
 # get the normalized histogram of the initial state
-# This histogram is the histogram we compare to later
+# this histogram is the histogram we compare to later
 q = compute_norm_hist(image, s_init)
 
-# predict new particles (states), based on the initial sate
-s_new = predict_particles(np.tile(s_init, (num_of_particles, 1)).T)
-weights = np.zeros(num_of_particles)
-# go over the new predicted states, and compute the histogram for the state and
-# the weight with the original histogram
-for ii, s in enumerate(s_new.T):
-    p = compute_norm_hist(image, s)
-    weights[ii] = compute_weight(p, q)
-normalized_weights = weights / np.sum(weights)
-weights_cumsum = np.cumsum(normalized_weights)
-# sample new particles according to the weights
-s_sampled = sample_particle(s_new, weights_cumsum)
+# for the first frame all the particle are the same as the initial state
+# and have the same weight since we don't have uncertainty in the state
+s_new = np.tile(s_init, (num_of_particles, 1)).T
+weights = np.ones(num_of_particles)
 
-# go over the rest of the video
+# go over the frames in the video
 while True:
-    ret, image = cap.read()
-    if not ret:  # if there is no next frame to read, stop
-        break
+    # sample new particles according to the weights
+    s_sampled = sample_particle(s_new, weights)
     # predict new particles (states) according to the previous states
     s_new = predict_particles(s_sampled)
     # go over the new predicted states, and compute the histogram for the state and
@@ -187,15 +180,16 @@ while True:
     for jj, s in enumerate(s_new.T):
         p = compute_norm_hist(image, s)
         weights[jj] = compute_weight(p, q)
-    normalized_weights = weights / np.sum(weights)
-    weights_cumsum = np.cumsum(normalized_weights)
-    # sample new particles according to the weights
-    s_sampled = sample_particle(s_new, weights_cumsum)
 
     # draw bounding box over the tracked object
-    image_with_boxes = draw_bounding_box(image, s_sampled, normalized_weights, with_max=False)
+    image_with_boxes = draw_bounding_box(image, s_new, weights, with_max=True)
     # image_with_particles = draw_particles(image_with_boxes, s_sampled, normalized_weights)
     result.write(image_with_boxes)
+
+    # read next frame
+    ret, image = cap.read()
+    if not ret:  # if there is no next frame to read, stop
+        break
 
 # release video objects
 cap.release()
