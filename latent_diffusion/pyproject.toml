@@ -1,0 +1,43 @@
+[project]
+name = "gradio-ldm"
+version = "0.1.0"
+description = "Example project for using Gradio with Latent Diffusion Model with Hugging Face Diffusers"
+readme = "README.md"
+requires-python = ">=3.12,<3.15"
+
+dependencies = [
+    "accelerate>=1.14.0",
+    "diffusers>=0.40.0",
+    "gradio>=6.26.0",
+    "pillow<12.0.0; sys_platform == 'linux'",
+    "torch>=2.11.0",
+    "torchvision>=0.26.0",
+    "torchaudio>=2.11.0",
+    "transformers>=5.16.1",
+]
+
+
+[tool.uv]
+environments = [
+    "sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+
+[tool.uv.sources]
+
+torch = [
+    { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
+]
+
+torchvision = [
+    { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
+]
+
+torchaudio = [
+    { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
